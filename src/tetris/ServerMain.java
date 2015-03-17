@@ -7,12 +7,11 @@ public class ServerMain {
 		
 		ServerSocketHandler server = new ServerSocketHandler(PORT);
 		Trainer trainer = new Trainer(server);
+		server.setTrainer(trainer);
 		DataRepo data = new DataRepo(trainer);
 		trainer.setData(data);
 		ConnectionHandler connectionHandler = new ConnectionHandler(server, data);
 
-		new Thread(server).start();
-		new Thread(data).start();
 		new Thread(trainer).start();
 		new Thread(connectionHandler).start();
 		

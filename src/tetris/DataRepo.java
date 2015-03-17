@@ -2,7 +2,7 @@ package tetris;
 
 import java.util.ArrayList;
 
-public class DataRepo implements Runnable {
+public class DataRepo{
 
 	private ArrayList<SampleVectorResult> resultsBuffer = new ArrayList<SampleVectorResult>();
 	private Trainer trainer;
@@ -27,9 +27,7 @@ public class DataRepo implements Runnable {
 		return results;
 	}
 
-	@Override
-	public void run() {
-		System.out.println("DataRepo running...");
+	public void print(String string) {
+		System.out.println(string);
 	}
-	
 }

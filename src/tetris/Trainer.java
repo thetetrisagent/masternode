@@ -6,11 +6,15 @@ import java.util.Random;
 
 public class Trainer implements Runnable{
 	
-	private static final int NUM_FEATURES = 6;
+	static final int NUM_FEATURES = 6;
 	private static final int MAX_ITERATIONS = 80;
 	private static final int NUM_SAMPLES = 100;
 	private static final double SELECTION_RATIO = 0.1;
 	private static final double NOISE_FACTOR = 4;
+
+	Random r = new Random();
+	double[] currMeanVector = new double[NUM_FEATURES];
+	double[] currVarVector = new double[NUM_FEATURES];
 	
 	private int counter = 0;
 	private boolean isReturned = false;
@@ -76,27 +80,25 @@ public class Trainer implements Runnable{
 	@Override
 	public void run() {
 		int iterations = 0;
-		Random r = new Random();
-		double[] currMeanVector = new double[NUM_FEATURES];
-		double[] currVarVector = new double[NUM_FEATURES];
 		for (int i = 0; i < NUM_FEATURES; i++) {
 			currVarVector[i] = 100;	
 		}
 
 		while (iterations < MAX_ITERATIONS) {
 			//Generate Samples
-			ArrayList<Command> commands = new ArrayList<Command>();
+			ArrayList<double[]> commands = new ArrayList<double[]>();
 			for (int i = 0; i < NUM_SAMPLES; i++) {
 				//Generate new weight vector
 				double[] newSampleWeight = new double[NUM_FEATURES];
 				for (int j = 0; j < NUM_FEATURES; j++) {
 					newSampleWeight[j] = (r.nextGaussian()*Math.sqrt(currVarVector[j]))+currMeanVector[j];	
 				}
-				commands.add(new Command(newSampleWeight));
+				commands.add(newSampleWeight);
 			}
 			
 			//Distribute the work
-			server.distributeWork(commands);
+//			server.setCommandList(commands);
+			server.resetJobCount(NUM_SAMPLES);
 
 			//Wait for data to come back
 			while (!isReturned) {
@@ -109,5 +111,14 @@ public class Trainer implements Runnable{
 			
 			iterations++;
 		}
+	}
+
+	public double[] generateSampleWeightVector() {
+		//Generate new weight vector
+		double[] newSampleWeight = new double[NUM_FEATURES];
+		for (int j = 0; j < NUM_FEATURES; j++) {
+			newSampleWeight[j] = (r.nextGaussian()*Math.sqrt(currVarVector[j]))+currMeanVector[j];	
+		}
+		return newSampleWeight;
 	}
 }

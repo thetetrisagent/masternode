@@ -1,20 +1,21 @@
 package tetris;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 
-public class ServerSocketHandler implements Runnable {
+public class ServerSocketHandler{
 	private ServerSocket server;
-	private ArrayList<ObjectOutputStream> clients;
+	private ArrayList<ClientHandler> clients;
+//	private ArrayList<double[]> vectors;
+	private int jobCount = 0;
+	private Trainer trainer;
 	
 	public ServerSocketHandler(int port) {
 		try {
 			this.server = new ServerSocket(port);
-			this.clients = new ArrayList<ObjectOutputStream>();
+			this.clients = new ArrayList<ClientHandler>();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -23,25 +24,47 @@ public class ServerSocketHandler implements Runnable {
 		return this.server;
 	}
 	
-	public void addClient(ObjectOutputStream client) {
+	public void setTrainer(Trainer trainer) {
+		this.trainer = trainer;
+	}
+	
+	public void addClient(ClientHandler client) {
 		clients.add(client);
 	}
 	
-	public void distributeWork(ArrayList<Command> commands) {
+	public synchronized void removeClient(ClientHandler client) {
+		clients.remove(clients.indexOf(client));
+		jobCount++;
+	}
+	
+	public synchronized boolean distributeWork(ClientHandler client) {
+//		try {
+//			if (vectors.size() > 0) {
+//				client.getObjectOutputStream().writeObject(vectors.remove(0));
+//				return true;
+//			} else {
+//				client.getObjectOutputStream().writeObject(null);
+//			}
 		try {
-			while (clients.size() < 5) {
-				//block
+			if (jobCount > 0) {
+				client.getObjectOutputStream().writeObject(trainer.generateSampleWeightVector());
+				jobCount--;
+				return true;
+			} else {
+				client.getObjectOutputStream().writeObject(null);
 			}
-			for (int i = 0; i < commands.size(); i++) {
-				clients.get(i%clients.size()).writeObject(commands.get(i));
-			}
-		} catch (Exception e) {
-			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		return false;
 	}
 
-	@Override
-	public void run() {
-		System.out.println("ServerSocketHandler running...");
+//	public synchronized void setCommandList(ArrayList<double[]> vectors) {
+//		this.vectors = vectors;
+//	}
+
+	public synchronized void resetJobCount(int jobCount) {
+		this.jobCount = jobCount; 
 	}
 }

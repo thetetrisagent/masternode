@@ -1,7 +1,6 @@
 package tetris;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -23,8 +22,9 @@ public class ConnectionHandler implements Runnable {
 			while (true) {
 				Socket clientSocket;
 				clientSocket = server.accept();
-				serverSocketHandler.addClient(new ObjectOutputStream(clientSocket.getOutputStream()));
-				new Thread(new InputHandler(data,clientSocket)).start();
+				ClientHandler client = new ClientHandler(clientSocket);
+				serverSocketHandler.addClient(client);
+				new Thread(new InputHandler(data,client,serverSocketHandler)).start();
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
