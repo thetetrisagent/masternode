@@ -1,4 +1,4 @@
-package tetris;
+package network;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,7 +6,7 @@ import java.util.Random;
 
 public class Trainer implements Runnable{
 	
-	static final int NUM_FEATURES = 6;
+	static final int NUM_FEATURES = 8;
 	private static final int MAX_ITERATIONS = 80;
 	private static final int NUM_SAMPLES = 100;
 	private static final double SELECTION_RATIO = 0.1;

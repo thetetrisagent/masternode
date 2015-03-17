@@ -1,4 +1,4 @@
-package tetris;
+package network;
 
 import java.io.Serializable;
 

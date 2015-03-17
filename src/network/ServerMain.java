@@ -1,4 +1,4 @@
-package tetris;
+package network;
 
 public class ServerMain {
 	private static int PORT = 8888;
