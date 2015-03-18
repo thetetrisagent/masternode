@@ -7,11 +7,11 @@ import java.util.ArrayList;
 public class ServerSocketHandler{
 	private ServerSocket server;
 	private ArrayList<ClientHandler> clients;
-//	private ArrayList<double[]> vectors;
 	private int jobCount = 0;
-	private Trainer trainer;
+	private Controller controller;
 	
 	public ServerSocketHandler(int port) {
+		System.out.println("server started at " + port);
 		try {
 			this.server = new ServerSocket(port);
 			this.clients = new ArrayList<ClientHandler>();
@@ -24,8 +24,8 @@ public class ServerSocketHandler{
 		return this.server;
 	}
 	
-	public void setTrainer(Trainer trainer) {
-		this.trainer = trainer;
+	public void setController(Controller controller) {
+		this.controller = controller;
 	}
 	
 	public void addClient(ClientHandler client) {
@@ -38,16 +38,9 @@ public class ServerSocketHandler{
 	}
 	
 	public synchronized boolean distributeWork(ClientHandler client) {
-//		try {
-//			if (vectors.size() > 0) {
-//				client.getObjectOutputStream().writeObject(vectors.remove(0));
-//				return true;
-//			} else {
-//				client.getObjectOutputStream().writeObject(null);
-//			}
 		try {
 			if (jobCount > 0) {
-				client.getObjectOutputStream().writeObject(trainer.generateSampleWeightVector());
+				client.getObjectOutputStream().writeObject(controller.getSampleWeightVector());
 				jobCount--;
 				return true;
 			} else {
@@ -60,11 +53,7 @@ public class ServerSocketHandler{
 		return false;
 	}
 
-//	public synchronized void setCommandList(ArrayList<double[]> vectors) {
-//		this.vectors = vectors;
-//	}
-
 	public synchronized void resetJobCount(int jobCount) {
-		this.jobCount = jobCount; 
+		this.jobCount = jobCount;
 	}
 }

@@ -5,15 +5,15 @@ import java.util.ArrayList;
 public class DataRepo{
 
 	private ArrayList<SampleVectorResult> resultsBuffer = new ArrayList<SampleVectorResult>();
-	private Trainer trainer;
+	private Controller controller;
 	
-	public DataRepo(Trainer trainer) {
-		this.trainer = trainer;
+	public DataRepo(Controller evaluator) {
+		this.controller = evaluator;
 	}
 	
 	public synchronized void addResult(SampleVectorResult result) {
 		resultsBuffer.add(result);
-		trainer.notifyNewResult();
+		controller.notifyNewResult();
 	}
 	
 	public synchronized SampleVectorResult getNextResult() {

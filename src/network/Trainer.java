@@ -2,23 +2,20 @@ package network;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
-public class Trainer implements Runnable{
+public class Trainer implements Runnable, Controller{
 	
 	static final int NUM_FEATURES = 8;
 	private static final int MAX_ITERATIONS = 80;
-	private static final int NUM_SAMPLES = 100;
-	private static final double SELECTION_RATIO = 0.1;
-	private static final double NOISE_FACTOR = 4;
-	private static final String SAVED_DATA_LOCATION = "save_data";
-	private static final String FINAL_CSV_FILENAME = "results_data.csv";
+	static final int NUM_SAMPLES = 100;
+	static final double SELECTION_RATIO = 0.1;
+	static final double NOISE_FACTOR = 4;
+	private static final String SAVED_DATA_LOCATION = "save_data_trainer";
 
 	Random r = new Random();
 	double[] currMeanVector;
@@ -28,12 +25,14 @@ public class Trainer implements Runnable{
 	
 	private int trainingLoop = 0;
 	private int counter = 0;
-	private boolean isReturned = false;
+	private volatile boolean isReturned = false;
 	private DataRepo data;
 	private ServerSocketHandler server;
+	private Evaluator evaluator;
 
-	public Trainer(ServerSocketHandler server) {
+	public Trainer(ServerSocketHandler server, Evaluator evaluator) {
 		this.server = server;
+		this.evaluator = evaluator;
 	}
 	
 	public void setData(DataRepo data) {
@@ -72,7 +71,12 @@ public class Trainer implements Runnable{
 	
 				//Wait for data to come back
 				while (!isReturned) {
-					//block
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				isReturned = false;
 				
@@ -82,8 +86,8 @@ public class Trainer implements Runnable{
 				iterations++;
 			}
 			
-			//write to CSV the last mean/var vectors
-			recordFinalState();
+			//send vector for evaluation and recording
+			evaluator.addNewJob(currMeanVector, currVarVector);
 			
 			//reset the state
 			resetTrainingState();
@@ -169,7 +173,7 @@ public class Trainer implements Runnable{
 		this.data.getResults();
 	}
 
-	public double[] generateSampleWeightVector() {
+	public double[] getSampleWeightVector() {
 		//Generate new weight vector
 		double[] newSampleWeight = new double[NUM_FEATURES];
 		for (int j = 0; j < NUM_FEATURES; j++) {
@@ -178,35 +182,6 @@ public class Trainer implements Runnable{
 		return newSampleWeight;
 	}
 
-	
-	private void recordFinalState() {
-		try {
-			FileWriter writer = new FileWriter(FINAL_CSV_FILENAME,true);
-			//Print Results
-			writer.append("Training Loop: " + this.trainingLoop + "\n");
-	
-			writer.append("means: [");
-			writer.append(""+currMeanVector[0]);
-			for (int i = 1; i < NUM_FEATURES; i++) {
-				writer.append(", " + currMeanVector[i]);
-			}
-			writer.append("]\n");
-			
-			writer.append("vars: [");
-			writer.append(""+currVarVector[0]);
-			for (int i = 1; i < NUM_FEATURES; i++) {
-				writer.append(", " + currVarVector[i]);
-			}
-			writer.append("]\n\n\n");
-			 
-		    writer.flush();
-		    writer.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-		
 	
 	private void saveCurrentProgress(SavedState savedState) {
 		try {
