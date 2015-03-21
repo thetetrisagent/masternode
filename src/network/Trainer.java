@@ -11,16 +11,20 @@ import java.util.Random;
 public class Trainer implements Runnable, Controller{
 	
 	static final int NUM_FEATURES = 8;
-	private static final int MAX_ITERATIONS = 80;
+	static final int MAX_ITERATIONS = 80;
 	static final int NUM_SAMPLES = 100;
 	static final double SELECTION_RATIO = 0.1;
 	static final double NOISE_FACTOR = 4;
 	private static final String SAVED_DATA_LOCATION = "save_data_trainer";
+	private static final double[] CONSTANT_NOISE = new double[] {1.0,0.0};
+	private static final double[] DECREASING_NOISE = new double[] {0.0,1.0};
+	
 
 	Random r = new Random();
 	double[] currMeanVector;
 	double[] currVarVector;
 	private int iterations;
+	private double[] noiseController;
 	private ArrayList<SampleVectorResult> sampleResults = new ArrayList<SampleVectorResult>();
 	
 	private int trainingLoop = 0;
@@ -30,6 +34,7 @@ public class Trainer implements Runnable, Controller{
 	private ServerSocketHandler server;
 	private Evaluator evaluator;
 
+	
 	public Trainer(ServerSocketHandler server, Evaluator evaluator) {
 		this.server = server;
 		this.evaluator = evaluator;
@@ -51,22 +56,13 @@ public class Trainer implements Runnable, Controller{
 	@Override
 	public void run() {
 		initializeState();
-
 		while (true) {
+			
+			setNoiseStatus();
+			
 			while (iterations < MAX_ITERATIONS) {
-				//Generate Samples
-	//			ArrayList<double[]> commands = new ArrayList<double[]>();
-	//			for (int i = 0; i < NUM_SAMPLES; i++) {
-	//				//Generate new weight vector
-	//				double[] newSampleWeight = new double[NUM_FEATURES];
-	//				for (int j = 0; j < NUM_FEATURES; j++) {
-	//					newSampleWeight[j] = (r.nextGaussian()*Math.sqrt(currVarVector[j]))+currMeanVector[j];	
-	//				}
-	//				commands.add(newSampleWeight);
-	//			}
-	//			
+				
 				//Distribute the work
-	//			server.setCommandList(commands);
 				server.resetJobCount(NUM_SAMPLES);
 	
 				//Wait for data to come back
@@ -83,11 +79,11 @@ public class Trainer implements Runnable, Controller{
 				//Aggregate Results
 				executeAggregation();
 				
+				//send vector for evaluation and recording
+				evaluator.addNewJob(currMeanVector, currVarVector);
+				
 				iterations++;
 			}
-			
-			//send vector for evaluation and recording
-			evaluator.addNewJob(currMeanVector, currVarVector);
 			
 			//reset the state
 			resetTrainingState();
@@ -104,6 +100,7 @@ public class Trainer implements Runnable, Controller{
 		for (int i = 0; i < NUM_FEATURES; i++) {
 			double newMean = 0;
 			double newVariance = 0;
+			
 			//Calculate New Mean
 			for (int j = 0; j < numSelected; j++) {
 				int curr = NUM_SAMPLES-1-j;
@@ -118,23 +115,17 @@ public class Trainer implements Runnable, Controller{
 				newVariance += Math.pow(newMean - sampleResults.get(curr).getWeightVector()[i],2);
 			}
 			newVariance /= numSelected;
-			currVarVector[i] = newVariance + NOISE_FACTOR;
+			currVarVector[i] = newVariance + noiseController[0]*NOISE_FACTOR + noiseController[1]*getDecreasingNoise();
 		}
 		
-		//Print Results
-		System.out.print("Current Means are: ");
-		for (int i = 0; i < NUM_FEATURES; i++) {
-			System.out.print(currMeanVector[i] + ", ");
-		}
-		System.out.println();
-		System.out.print("Current Vars are: ");
-		for (int i = 0; i < NUM_FEATURES; i++) {
-			System.out.print(currVarVector[i] + ", ");
-		}
-		System.out.println();
-		System.out.println(iterations + ": " + sampleResults.get(sampleResults.size()-(int)numSelected).getResults());
-		System.out.println("Training Loop: " + this.trainingLoop);
+		printResults();
+		System.out.println("Iteration " + iterations + " results: " + sampleResults.get(sampleResults.size()-(int)numSelected).getResults());
+		System.out.println("Noise is: " + (noiseController[0]*NOISE_FACTOR + noiseController[1]*getDecreasingNoise()));
 		saveCurrentProgress(new SavedState(currMeanVector,currVarVector,iterations+1,trainingLoop));
+	}
+
+	private double getDecreasingNoise() {
+		return Math.max(5-(iterations/10.0), 0);
 	}
 
 	private void initializeState() {
@@ -142,24 +133,39 @@ public class Trainer implements Runnable, Controller{
 		if (savedState == null) {
 			resetTrainingState();
 		} else {
-			this.currMeanVector = savedState.getMean();
-			this.currVarVector = savedState.getVar();
+			this.currMeanVector = (double[]) savedState.getMean();
+			this.currVarVector = (double[]) savedState.getVar();
 			this.iterations = savedState.getIterations();
 			this.trainingLoop = savedState.getTrainingLoop();
-			//Print Results
-			System.out.print("Current Means are: ");
-			for (int i = 0; i < NUM_FEATURES; i++) {
-				System.out.print(this.currMeanVector[i] + ", ");
-			}
-			System.out.println();
-			System.out.print("Current Vars are: ");
-			for (int i = 0; i < NUM_FEATURES; i++) {
-				System.out.print(this.currVarVector[i] + ", ");
-			}
-			System.out.println();
-			System.out.println("Iteration: " + this.iterations);
-			System.out.println("Training Loop: " + this.trainingLoop);
+			printResults();
 		}
+	}
+
+	private void setNoiseStatus() {
+		//Set noise status
+		if (this.trainingLoop%2 == 0) {
+			//Constant Noise
+			noiseController = CONSTANT_NOISE;
+		} else {
+			//Decreasing Noise
+			noiseController = DECREASING_NOISE;
+		}
+	}
+
+	private void printResults() {
+		//Print Results
+		System.out.print("Current Means are: ");
+		for (int i = 0; i < NUM_FEATURES; i++) {
+			System.out.print(this.currMeanVector[i] + ", ");
+		}
+		System.out.println();
+		System.out.print("Current Vars are: ");
+		for (int i = 0; i < NUM_FEATURES; i++) {
+			System.out.print(this.currVarVector[i] + ", ");
+		}
+		System.out.println();
+		System.out.println("Iteration: " + this.iterations);
+		System.out.println("Training Loop: " + this.trainingLoop);
 	}
 
 	private void resetTrainingState() {
@@ -182,7 +188,6 @@ public class Trainer implements Runnable, Controller{
 		return newSampleWeight;
 	}
 
-	
 	private void saveCurrentProgress(SavedState savedState) {
 		try {
 	         FileOutputStream fos= new FileOutputStream(SAVED_DATA_LOCATION);
