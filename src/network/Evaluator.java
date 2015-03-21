@@ -11,8 +11,9 @@ import java.util.ArrayList;
 public class Evaluator implements Runnable, Controller {
 	
 	private static final int NUM_FEATURES = Trainer.NUM_FEATURES;
+	private static final int MAX_ITERATIONS = Trainer.MAX_ITERATIONS;
 	private static final String SAVED_DATA_LOCATION = "save_data_evaluator";
-	private static final String FINAL_CSV_FILENAME = "results_data.csv";
+	private static final String FINAL_CSV_FILENAME = "results_data_%d.csv";
 	private static final int NUM_SAMPLES = 30;
 
 	double[] currMeanVector;
@@ -22,6 +23,7 @@ public class Evaluator implements Runnable, Controller {
 	private ArrayList<SampleVectorResult> sampleResults = new ArrayList<SampleVectorResult>();
 	
 	private int evaluationLoop = 0;
+	private int iterations = 0;
 	private int counter = 0;
 	private double results;
 	private volatile boolean isReturned = false;
@@ -53,43 +55,47 @@ public class Evaluator implements Runnable, Controller {
 	@Override
 	public void run() {
 		initializeState();
-
 		while (true) {
-			
-			//Wait for an evaluation job
-			System.out.println("Wait for job");
-			while(jobListMean.size() == 0) {
-				//block
-			}
-			this.currMeanVector = this.jobListMean.remove(0);
-			this.currVarVector = this.jobListVar.remove(0);
-			
-			//Distribute the work
-			server.resetJobCount(NUM_SAMPLES);
-
-			//Wait for data to come back
-			while (!this.isReturned) {
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			this.isReturned = false;
-			
-			System.out.println("Got all results back!");
-//			this.isReturned = false;
-			//Aggregate Results
-			executeAggregation();
-
-			//write to CSV the last mean/var vectors
-			recordFinalState();
+			while (iterations < MAX_ITERATIONS) {
 				
+				//Wait for an evaluation job
+				System.out.println("Wait for job");
+				while(jobListMean.size() == 0) {
+					//block
+				}
+				this.currMeanVector = this.jobListMean.get(0);
+				this.currVarVector = this.jobListVar.get(0);
+				
+				//Distribute the work
+				System.out.println("give jobs!");
+				server.resetJobCount(NUM_SAMPLES);
+	
+				//Wait for data to come back
+				while (!this.isReturned) {
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				this.isReturned = false;
+				
+				//Aggregate Results
+				executeAggregation();
+	
+				//write to CSV the last mean/var vectors
+				recordFinalState();
+				this.jobListMean.remove(0); //we only remove here in case not written to CSV, so we can resume.
+				this.jobListVar.remove(0);
+				
+				this.iterations++;
+			}
+			
 			//reset the state
 			resetTrainingState();
-			saveCurrentProgress(new SavedState(currMeanVector,currVarVector,0,evaluationLoop+1));
-			evaluationLoop++;	
+			saveCurrentProgress(new SavedState(jobListMean,jobListVar,iterations,evaluationLoop+1));
+			evaluationLoop++;
 		}
 	}
 
@@ -99,22 +105,26 @@ public class Evaluator implements Runnable, Controller {
 			this.results += sampleResults.get(i).getResults();
 		}
 		this.results /= (double)sampleResults.size();
+		saveCurrentProgress(new SavedState(jobListMean,jobListVar,iterations+1,evaluationLoop));
 	}
 
+	@SuppressWarnings("unchecked")
 	private void initializeState() {
 		SavedState savedState = loadPreviousProgress();
 		if (savedState == null) {
 			resetTrainingState();
 		} else {
-			this.currMeanVector = savedState.getMean();
-			this.currVarVector = savedState.getVar();
+			this.jobListMean = (ArrayList<double[]>) savedState.getMean();
+			this.jobListVar = (ArrayList<double[]>) savedState.getVar();
 			this.evaluationLoop = savedState.getTrainingLoop();
+			this.iterations = savedState.getIterations();
 		}
 	}
 
 	private void resetTrainingState() {
 		this.sampleResults.clear();
 		this.data.getResults();
+		this.iterations = 0;
 	}
 
 	public double[] getSampleWeightVector() {
@@ -124,8 +134,8 @@ public class Evaluator implements Runnable, Controller {
 	
 	private void recordFinalState() {
 		try {
-			FileWriter writer = new FileWriter(FINAL_CSV_FILENAME,true);
-			writer.append(""+this.results);
+			FileWriter writer = new FileWriter(String.format(FINAL_CSV_FILENAME,this.evaluationLoop),true);
+			writer.append(""+ this.iterations + "," + this.results);
 			for (int i = 0; i < NUM_FEATURES; i++) {
 				writer.append("," + currMeanVector[i]);
 			}
