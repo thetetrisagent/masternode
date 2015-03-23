@@ -2,6 +2,8 @@ package network;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
@@ -18,6 +20,8 @@ public class Trainer implements Runnable, Controller{
 	private static final String SAVED_DATA_LOCATION = "save_data_trainer";
 	private static final double[] CONSTANT_NOISE = new double[] {1.0,0.0};
 	private static final double[] DECREASING_NOISE = new double[] {0.0,1.0};
+	private static final String ITERATION_TIMES_CSV_FILENAME = "iterationTimes_%d.csv";
+	private static final String TRAININGLOOP_TIMES_CSV_FILENAME = "trainingLoopTimes.csv";
 	
 
 	Random r = new Random();
@@ -26,6 +30,8 @@ public class Trainer implements Runnable, Controller{
 	private int iterations;
 	private double[] noiseController;
 	private ArrayList<SampleVectorResult> sampleResults = new ArrayList<SampleVectorResult>();
+	private StopWatch trainingLoopWatch = new StopWatch();
+	private StopWatch iterationWatch = new StopWatch();
 	
 	private int trainingLoop = 0;
 	private int counter = 0;
@@ -57,10 +63,11 @@ public class Trainer implements Runnable, Controller{
 	public void run() {
 		initializeState();
 		while (true) {
-			
+			trainingLoopWatch.reset();
 			setNoiseStatus();
 			
 			while (iterations < MAX_ITERATIONS) {
+				iterationWatch.reset();
 				
 				//Distribute the work
 				server.resetJobCount(NUM_SAMPLES);
@@ -79,13 +86,15 @@ public class Trainer implements Runnable, Controller{
 				
 				iterations++;
 			}
+
+			long trainingLoopTime = trainingLoopWatch.getElapsedTime();
+			recordTiming(TRAININGLOOP_TIMES_CSV_FILENAME,0,trainingLoopTime);
 			
 			//reset the state
 			resetTrainingState();
 			saveCurrentProgress(new SavedState(currMeanVector,currVarVector,iterations,trainingLoop+1));
 			trainingLoop++;
-			
-		}
+		} 
 	}
 
 	private void block(int timing) {
@@ -121,6 +130,14 @@ public class Trainer implements Runnable, Controller{
 			newVariance /= numSelected;
 			currVarVector[i] = newVariance + noiseController[0]*NOISE_FACTOR + noiseController[1]*getDecreasingNoise();
 		}
+
+		
+		long iterationTime = iterationWatch.getElapsedTime();
+		long sumRows = 0;
+		for (int i = 0; i < sampleResults.size(); i++) {
+			sumRows += sampleResults.get(i).getResults();
+		}
+		recordTiming(String.format(ITERATION_TIMES_CSV_FILENAME,this.trainingLoop),sumRows,iterationTime);
 		
 		printResults();
 		System.out.println("Iteration " + iterations + " results: " + sampleResults.get(sampleResults.size()-(int)numSelected).getResults());
@@ -128,6 +145,20 @@ public class Trainer implements Runnable, Controller{
 		saveCurrentProgress(new SavedState(currMeanVector,currVarVector,iterations+1,trainingLoop));
 	}
 
+	private void recordTiming(String filePath, long results, long iterationTime) {
+		try {
+			FileWriter writer = new FileWriter(filePath,true);
+			writer.append(""+ this.iterations + "," + results + "," + iterationTime);
+			writer.append("\n");
+		    writer.flush();
+		    writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+		
+	
 	private double getDecreasingNoise() {
 		return Math.max(5-(iterations/10.0), 0);
 	}
