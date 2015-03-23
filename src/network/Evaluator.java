@@ -61,7 +61,7 @@ public class Evaluator implements Runnable, Controller {
 				//Wait for an evaluation job
 				System.out.println("Wait for job");
 				while(jobListMean.size() == 0) {
-					//block
+					block(500);
 				}
 				this.currMeanVector = this.jobListMean.get(0);
 				this.currVarVector = this.jobListVar.get(0);
@@ -72,12 +72,7 @@ public class Evaluator implements Runnable, Controller {
 	
 				//Wait for data to come back
 				while (!this.isReturned) {
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					block(500);
 				}
 				this.isReturned = false;
 				
@@ -96,6 +91,15 @@ public class Evaluator implements Runnable, Controller {
 			resetTrainingState();
 			saveCurrentProgress(new SavedState(jobListMean,jobListVar,iterations,evaluationLoop+1));
 			evaluationLoop++;
+		}
+	}
+
+	private void block(int timing) {
+		try {
+			Thread.sleep(timing);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 

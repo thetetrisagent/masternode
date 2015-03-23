@@ -67,12 +67,7 @@ public class Trainer implements Runnable, Controller{
 	
 				//Wait for data to come back
 				while (!isReturned) {
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					block(500);
 				}
 				isReturned = false;
 				
@@ -90,6 +85,15 @@ public class Trainer implements Runnable, Controller{
 			saveCurrentProgress(new SavedState(currMeanVector,currVarVector,iterations,trainingLoop+1));
 			trainingLoop++;
 			
+		}
+	}
+
+	private void block(int timing) {
+		try {
+			Thread.sleep(timing);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
