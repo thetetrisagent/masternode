@@ -21,14 +21,14 @@ public class InputHandler implements Runnable {
 			ObjectInputStream inFromClient = client.getObjectInputStream();
 			while(true) {
 				//Wait for a request
-				Object obj = inFromClient.readObject();
+				Object obj = inFromClient.readObject(); // TODO: SocketException: Connection reset, SocketTimeoutException: Read timed out
 				while (!(obj instanceof Integer)) {
-					obj = inFromClient.readObject();
+					obj = inFromClient.readObject(); // TODO: SocketTimeoutException: Read timed out
 				}
 				
 				//Send a job
 				if (serverSocketHandler.distributeWork(client)) {
-					SampleVectorResult sampleVectorResult = (SampleVectorResult) inFromClient.readObject();
+					SampleVectorResult sampleVectorResult = (SampleVectorResult) inFromClient.readObject(); // TODO: SocketTimeoutException: Read timed out
 					data.addResult(sampleVectorResult);
 				}
 			}

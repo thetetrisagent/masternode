@@ -22,8 +22,8 @@ public class ConnectionHandler implements Runnable {
 			while (true) {
 				Socket clientSocket;
 				clientSocket = server.accept();
-				ClientHandler client = new ClientHandler(clientSocket);
-				serverSocketHandler.addClient(client);
+				ClientHandler client = new ClientHandler(clientSocket); // TODO: SocketException: Connection reset, StreamCorruptedException: invalid stream header 
+				serverSocketHandler.addClient(client);					// Both Exceptions due due to NullPointerException in thread InputHandler:24
 				new Thread(new InputHandler(data,client,serverSocketHandler)).start();
 			}
 		} catch (IOException e) {
