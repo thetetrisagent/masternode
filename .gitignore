@@ -2,3 +2,4 @@ results_data.csv
 save_data_evaluator
 save_data_trainer
 *.csv
+evaluator_log.txt

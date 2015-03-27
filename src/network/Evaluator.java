@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Evaluator implements Runnable, Controller {
 	
@@ -15,6 +16,7 @@ public class Evaluator implements Runnable, Controller {
 	private static final String SAVED_DATA_LOCATION = "save_data_evaluator";
 	private static final String FINAL_CSV_FILENAME = "results_data_%d.csv";
 	private static final int NUM_SAMPLES = 30;
+	private static final String EVALUATOR_LOG_FILE = "evaluator_log.txt";
 
 	double[] currMeanVector;
 	double[] currVarVector;
@@ -105,11 +107,28 @@ public class Evaluator implements Runnable, Controller {
 
 	private void executeAggregation() {
 		this.results = 0;
-		for (int i = 0; i < sampleResults.size(); i++) {
+		int i = 0;
+		for (; i < sampleResults.size(); i++) {
 			this.results += sampleResults.get(i).getResults();
+			logToFile("iteration " + i + " evaluation results: " + sampleResults.get(i).getResults());
 		}
 		this.results /= (double)sampleResults.size();
+		logToFile("Average Result of " + i + " games: " + this.results);
+		logToFile("With SampleVector: " + Arrays.toString(sampleResults.get(0).getWeightVector()));
 		saveCurrentProgress(new SavedState(jobListMean,jobListVar,iterations+1,evaluationLoop));
+	}
+	
+	private void logToFile(String toLog) {
+		try {
+			FileWriter writer = new FileWriter(EVALUATOR_LOG_FILE,true);
+			writer.append(toLog);
+			writer.append("\n");
+		    writer.flush();
+		    writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -132,7 +151,13 @@ public class Evaluator implements Runnable, Controller {
 	}
 
 	public double[] getSampleWeightVector() {
-		return currMeanVector;
+//		return currMeanVector;
+		//Generate new weight vector
+		double[] newSampleWeight = new double[NUM_FEATURES];
+		for (int j = 0; j < NUM_FEATURES; j++) {
+			newSampleWeight[j] = currMeanVector[j];	
+		}
+		return newSampleWeight;
 	}
 
 	
