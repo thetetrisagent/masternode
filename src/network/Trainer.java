@@ -141,6 +141,7 @@ public class Trainer implements Runnable, Controller{
 		
 		printResults();
 		System.out.println("Iteration " + iterations + " results: " + sampleResults.get(sampleResults.size()-(int)numSelected).getResults());
+		System.out.println("Median: " + sampleResults.get(NUM_SAMPLES / 2).getResults() + ", Best: " + sampleResults.get(sampleResults.size() - 1).getResults() + ", Worst: " + sampleResults.get(0).getResults());
 		System.out.println("Noise is: " + (noiseController[0]*NOISE_FACTOR + noiseController[1]*getDecreasingNoise()));
 		saveCurrentProgress(new SavedState(currMeanVector,currVarVector,iterations+1,trainingLoop));
 	}
