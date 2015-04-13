@@ -115,11 +115,11 @@ public class Trainer implements Runnable, Controller{
 			double newVariance = 0;
 			
 			//Calculate New Mean
+			double totalSumOfWeights = numSelected*(1+numSelected)/2; //arithmetic progression
 			for (int j = 0; j < numSelected; j++) {
 				int curr = NUM_SAMPLES-1-j;
-				newMean += sampleResults.get(curr).getWeightVector()[i];
+				newMean += sampleResults.get(curr).getWeightVector()[i] * ((j+1)/totalSumOfWeights);
 			}
-			newMean /= numSelected;
 			currMeanVector[i] = newMean;
 			
 			//Calculate New Variance
