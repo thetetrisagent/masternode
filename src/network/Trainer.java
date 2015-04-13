@@ -16,7 +16,7 @@ public class Trainer implements Runnable, Controller{
 	static final int MAX_ITERATIONS = 80;
 	static final int NUM_SAMPLES = 100;
 	static final double SELECTION_RATIO = 0.1;
-	static final double NOISE_FACTOR = 4;
+	static final double NOISE_FACTOR = 0;
 	private static final String SAVED_DATA_LOCATION = "save_data_trainer";
 	private static final double[] CONSTANT_NOISE = new double[] {1.0,0.0};
 	private static final double[] DECREASING_NOISE = new double[] {0.0,1.0};
