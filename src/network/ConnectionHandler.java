@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+//ConnectionHandler listens for connection to the server, connects them and adds them to a list of connected clients
 public class ConnectionHandler implements Runnable {
 	private ServerSocketHandler serverSocketHandler;
 	private ServerSocket server;
@@ -22,8 +23,8 @@ public class ConnectionHandler implements Runnable {
 			while (true) {
 				Socket clientSocket;
 				clientSocket = server.accept();
-				ClientHandler client = new ClientHandler(clientSocket); // TODO: SocketException: Connection reset, StreamCorruptedException: invalid stream header 
-				serverSocketHandler.addClient(client);					// Both Exceptions due due to NullPointerException in thread InputHandler:24
+				ClientHandler client = new ClientHandler(clientSocket);  
+				serverSocketHandler.addClient(client);					
 				new Thread(new InputHandler(data,client,serverSocketHandler)).start();
 			}
 		} catch (IOException e) {

@@ -2,6 +2,7 @@ package network;
 
 import java.util.ArrayList;
 
+//DataRepo stores the results from the clients and notifies the controller(either evaluator or trainer) so that it can make decisioms
 public class DataRepo{
 
 	private ArrayList<SampleVectorResult> resultsBuffer = new ArrayList<SampleVectorResult>();

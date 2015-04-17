@@ -3,6 +3,7 @@ package network;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+//InputHandler handles input coming from a client
 public class InputHandler implements Runnable {
 	
 	private DataRepo data;
@@ -21,14 +22,14 @@ public class InputHandler implements Runnable {
 			ObjectInputStream inFromClient = client.getObjectInputStream();
 			while(true) {
 				//Wait for a request
-				Object obj = inFromClient.readObject(); // TODO: SocketException: Connection reset, SocketTimeoutException: Read timed out
+				Object obj = inFromClient.readObject();
 				while (!(obj instanceof Integer)) {
-					obj = inFromClient.readObject(); // TODO: SocketTimeoutException: Read timed out
+					obj = inFromClient.readObject();
 				}
 				
 				//Send a job
 				if (serverSocketHandler.distributeWork(client)) {
-					SampleVectorResult sampleVectorResult = (SampleVectorResult) inFromClient.readObject(); // TODO: SocketTimeoutException: Read timed out
+					SampleVectorResult sampleVectorResult = (SampleVectorResult) inFromClient.readObject();
 					data.addResult(sampleVectorResult);
 				}
 			}
@@ -42,7 +43,6 @@ public class InputHandler implements Runnable {
 
 	private void removeClientSocket() {
 		serverSocketHandler.removeClient(client);
-//		data.addResult(new SampleVectorResult(new double[Trainer.NUM_FEATURES], -1));
 	}
 
 }

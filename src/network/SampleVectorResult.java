@@ -2,6 +2,7 @@ package network;
 
 import java.io.Serializable;
 
+//SampleVectorResult encapsulates the weight vector and the score it achieved for easy transfer of data.
 @SuppressWarnings("serial")
 public class SampleVectorResult implements Comparable<SampleVectorResult>, Serializable {
 	private double[] weightVector;

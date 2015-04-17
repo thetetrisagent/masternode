@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 
+//ServerSocketHandler handles the server socket and the maintains a list of the clients connected. It is also in charge of dispatching work to clients.
 public class ServerSocketHandler{
 	private ServerSocket server;
 	private ArrayList<ClientHandler> clients;

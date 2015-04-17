@@ -24,8 +24,8 @@ public class Evaluator implements Runnable, Controller {
 	private ArrayList<double[]> jobListVar = new ArrayList<double[]>();
 	private ArrayList<SampleVectorResult> sampleResults = new ArrayList<SampleVectorResult>();
 	
-	private int evaluationLoop = 0;
-	private int iterations = 0;
+	private int evaluationLoop = 0; //each loop = 80 iterations
+	private int iterations = 0; //each iteration has 10 games
 	private int counter = 0;
 	private double results;
 	private volatile boolean isReturned = false;
@@ -40,6 +40,7 @@ public class Evaluator implements Runnable, Controller {
 		this.data = data;
 	}
 	
+	//For DataRepo to notify on receipt of new results
 	public void notifyNewResult() {
 		counter++;
 		if (counter == NUM_SAMPLES) {
@@ -49,6 +50,7 @@ public class Evaluator implements Runnable, Controller {
 		}
 	}
 	
+	//Adds a new sample weight vector into the queue to be evaluated.
 	public void addNewJob(double[] meanVector, double[] varVector) {
 		jobListMean.add(meanVector);
 		jobListVar.add(varVector);
@@ -105,6 +107,7 @@ public class Evaluator implements Runnable, Controller {
 		}
 	}
 
+	//Aggregation step. Just get the average of the games played.
 	private void executeAggregation() {
 		this.results = 0;
 		int i = 0;
@@ -118,6 +121,7 @@ public class Evaluator implements Runnable, Controller {
 		saveCurrentProgress(new SavedState(jobListMean,jobListVar,iterations+1,evaluationLoop));
 	}
 	
+	//Logger function to log important information
 	private void logToFile(String toLog) {
 		try {
 			FileWriter writer = new FileWriter(EVALUATOR_LOG_FILE,true);
@@ -150,8 +154,8 @@ public class Evaluator implements Runnable, Controller {
 		this.iterations = 0;
 	}
 
+	//For socket handler to call when assigning a job to a client
 	public double[] getSampleWeightVector() {
-//		return currMeanVector;
 		//Generate new weight vector
 		double[] newSampleWeight = new double[NUM_FEATURES];
 		for (int j = 0; j < NUM_FEATURES; j++) {

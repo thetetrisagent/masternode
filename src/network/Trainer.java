@@ -50,6 +50,7 @@ public class Trainer implements Runnable, Controller{
 		this.data = data;
 	}
 	
+	//For DataRepo to notify on receipt of new results
 	public void notifyNewResult() {
 		counter++;
 		if (counter == NUM_SAMPLES) {

@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+//ClientHandler encapsulates the client and its input and output streams for easy access and referencing
 public class ClientHandler {
 	private Socket clientSocket;
 	private ObjectInputStream input;
